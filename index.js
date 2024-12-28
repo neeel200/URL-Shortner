@@ -1,18 +1,21 @@
-const express = require("express");
-const dotenv = require("dotenv")
+import express from 'express';
+import dotenv from 'dotenv';
+import errorController from './controllers/errorController.js';
+import globalRouter from './globalRouter.js';
 
-const errorController = require("./controllers/errorContrlller");
 const app = express();
 const PORT = process.env.PORT;
-app.use(express.urlencoded({ extended: false }));
-dotenv.config({path:".env"})
 
+app.use(express.urlencoded({ extended: false }));
+dotenv.config({ path: ".env" });
+
+// endpoints
+app.use("/api", globalRouter)
 
 // health route
 app.get("/", (req, res) => {
   res.send("API is running...");
 });
-
 
 // Error handlers
 app.all("*", (req, res, next) => {

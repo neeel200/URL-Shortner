@@ -20,4 +20,4 @@ class customError extends Error {
   }
 }
 
-module.exports = customError;
+export default customError;
