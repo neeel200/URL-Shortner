@@ -1,5 +1,5 @@
 
-const customError = require("./customError.js");
+import customError from './customError.js';
 
 const tryCatch = (controller) => async (req, res, next) => {
   try {
@@ -17,4 +17,4 @@ const tryCatch = (controller) => async (req, res, next) => {
 };
 
 
-module.exports = tryCatch;
+export default tryCatch;

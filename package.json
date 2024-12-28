@@ -2,6 +2,7 @@
   "name": "backend_task-the-alter",
   "version": "1.0.0",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "start": "node ./index.js"
   },
@@ -12,6 +13,8 @@
   "dependencies": {
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
-    "mongoose": "^8.9.2"
+    "mongoose": "^8.9.2",
+    "nanoid": "^5.0.9",
+    "request-ip": "^3.3.0"
   }
 }

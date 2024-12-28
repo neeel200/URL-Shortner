@@ -6,4 +6,4 @@ const errController = async (error, req, res, next) => {
   });
 };
 
-module.exports = errController;
+export default errController;
