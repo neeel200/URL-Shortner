@@ -4,15 +4,18 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "node ./index.js"
+    "start": "node -r dotenv/config ./index.js"
   },
   "keywords": [],
   "author": "Neelesh",
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "axios": "^1.7.9",
+    "cookie-parser": "^1.4.7",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.9.2",
     "nanoid": "^5.0.9",
     "request-ip": "^3.3.0"

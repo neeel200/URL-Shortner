@@ -3,7 +3,7 @@ import { Schema, model } from 'mongoose';
 const UserSchema = new Schema(
   {
     name: { type: String },
-    email: { type: String, required: true, unique: true },
+    email: { type: String, required: true, unique: true , sparse:true},
     urls: [{ type: Schema.Types.ObjectId, ref: "urls" }],
   },
   { timestamps: true }

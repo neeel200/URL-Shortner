@@ -33,7 +33,7 @@ const ClickSchema = new mongoose.Schema(
     clicksByDate: [
       {
         date: { type: Date },
-        cliks: { type: Number, default: 0 },
+        clicks: { type: Number, default: 0 },
       },
     ],
   },
