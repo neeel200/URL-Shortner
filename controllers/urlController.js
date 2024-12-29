@@ -9,14 +9,31 @@ import User from "../models/user.js";
 const getShortenUrl = tryCatch(async (req, res, next) => {
   const { topic, customAlias, longUrl } = req.body;
 
-  // const userId = req.user.id
-  const shortId = nanoid(10);
+  const userId = req.user.id;
+  const shortId = customAlias || nanoid(10);
+
+  // each topic can have its unique customAlias and if same topic and longUrl found then just change the alias
+  const existingUrl = await URL.findOne({ topic, longUrl });
+
+  if (existingUrl) {
+    if (existingUrl.alias !== shortId) {
+      existingUrl.alias = shortId;
+      await existingUrl.save();
+    }
+    return res.status(200).json({
+      shortUrl: `http://localhost:${process.env.PORT}/api/shorten/${shortId}`,
+      createdAt: new Date().toLocaleString(),
+    });
+  }
+
+  // else create a new url
+  
   const url = await URL.create({
     shortUrl: shortId,
     longUrl,
     topic: topic || null,
     alias: customAlias,
-    userId: 1,
+    userId,
   });
 
   if (!url) {
@@ -27,7 +44,10 @@ const getShortenUrl = tryCatch(async (req, res, next) => {
   user.urls.push(url.id);
   await user.save();
 
-  return res.status(201).json({ shortUrl: shortId, createdAt: url.createdAt });
+  return res.status(201).json({
+    shortUrl: `http://localhost:${process.env.PORT}/api/shorten/${shortId}`,
+    createdAt: new Date().toLocaleString(),
+  });
 });
 
 const redirectToTheOriginalUrl = tryCatch(async (req, res, next) => {
@@ -149,4 +169,4 @@ function getDeviceTypeFromUserAgent(userAgent) {
   return "Desktop";
 }
 
-export  { redirectToTheOriginalUrl, getShortenUrl };
+export { redirectToTheOriginalUrl, getShortenUrl };

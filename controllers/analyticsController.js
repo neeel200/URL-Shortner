@@ -1,26 +1,28 @@
 import tryCatch from "../utils/tryCatch.js";
 import User from "../models/user.js";
+import Url from "../models/url.js";
 import customError from "../utils/customError.js";
+import mongoose from "mongoose";
 
 const getUrlAnalyticForAlias = tryCatch(async (req, res, next) => {
   const { alias } = req.params;
   const userId = req.user.id;
 
   // validate for the current alias for the user
-  const userAliasExists = await URL.findOne({ alias, userId });
+  const userAliasExists = await Url.findOne({ alias, userId });
   if (!userAliasExists) {
     return next(new customError("Alias not found for this user", 404));
   }
 
-  const analytics = await URL.aggregate([
+  const analytics = await Url.aggregate([
     { $match: { alias } },
 
     //join
     {
       $lookup: {
         from: "clicks",
-        localField: "_id",
-        foreignField: "urlId",
+        localField: "clickId",
+        foreignField: "_id",
         as: "clickData",
       },
     },
@@ -49,11 +51,11 @@ const getUrlAnalyticForAlias = tryCatch(async (req, res, next) => {
   const response = {
     alias: analytics[0].alias,
     longUrl: analytics[0].longUrl,
-    totalClicks: analytics[0].clickData.totalClicks,
-    uniqueIps: analytics[0].clickData.uniqueIps,
-    osDetails: analytics[0].clickData.osDetails,
-    deviceDetails: analytics[0].clickData.deviceDetails,
-    clicksByDate: analytics[0].clickData.clicksByDate,
+    totalClicks: analytics[0].clickData?.totalClicks,
+    uniqueIps: analytics[0].clickData?.uniqueIps,
+    osDetails: analytics[0].clickData?.osDetails,
+    deviceDetails: analytics[0].clickData?.deviceDetails,
+    clicksByDate: analytics[0].clickData?.clicksByDate,
   };
 
   res.status(200).json({
@@ -67,9 +69,10 @@ const getUrlAnalyticForTopic = tryCatch(async (req, res, next) => {
 
   // get user's url under a given topic
   // joining from user to url to click collection
+  const userId = req.user.id;
 
   const pipeline = [
-    { $match: { _id: user._id } },
+    { $match: { _id: new mongoose.Types.ObjectId(userId) } },
     { $unwind: "$urls" },
     {
       $lookup: {
@@ -129,7 +132,7 @@ const getUrlAnalyticForTopic = tryCatch(async (req, res, next) => {
           {
             $group: {
               _id: "$overallClicksByDate.date",
-              totalClicks: { $sum: "$overallClicksByDate.cliks" },
+              totalClicks: { $sum: { $sum: "$overallClicksByDate.clicks" } },
             },
           },
           {
@@ -144,7 +147,7 @@ const getUrlAnalyticForTopic = tryCatch(async (req, res, next) => {
     },
   ];
 
-  const [otherData, clicksByDateData] = (await User.aggregate(pipeline))[0];
+  const { otherData, clicksByDateData } = (await User.aggregate(pipeline))[0];
 
   return res.status(200).json({
     urls: otherData[0].urls,
@@ -155,16 +158,16 @@ const getUrlAnalyticForTopic = tryCatch(async (req, res, next) => {
 });
 
 const getOverallUrlAnalytics = tryCatch(async (req, res, next) => {
-  const userId = req.user._id;
+  const userId = req.user.id;
 
   const pipeline = [
-    { $match: { userId: userId } },
-
+    { $match: { _id: new mongoose.Types.ObjectId(userId) } },
+    { $unwind: "$urls" },
     {
       $lookup: {
         from: "urls",
-        localField: "_id",
-        foreignField: "urlId",
+        localField: "urls",
+        foreignField: "_id",
         as: "urlDetails",
       },
     },
@@ -174,8 +177,8 @@ const getOverallUrlAnalytics = tryCatch(async (req, res, next) => {
     {
       $lookup: {
         from: "clicks",
-        localField: "urlDetails._id",
-        foreignField: "urlId",
+        localField: "urlDetails.clickId",
+        foreignField: "_id",
         as: "clicks",
       },
     },
@@ -215,7 +218,7 @@ const getOverallUrlAnalytics = tryCatch(async (req, res, next) => {
           {
             $group: {
               _id: "$overallClicksByDate.date",
-              totalClicks: { $sum: "$overallClicksByDate.clicks" },
+              totalClicks: { $sum: { $sum: "$overallClicksByDate.clicks" } },
             },
           },
           { $project: { _id: 0, date: "$_id", totalClicks: 1 } },
@@ -225,8 +228,8 @@ const getOverallUrlAnalytics = tryCatch(async (req, res, next) => {
           {
             $group: {
               _id: "$osType.osName",
-              totalUniqueClicks: { $sum: "$osType.uniqueClicks" },
-              totalUniqueUsers: { $sum: "$osType.uniqueUsers" },
+              totalUniqueClicks: { $sum: { $sum: "$osType.uniqueClicks" } },
+              totalUniqueUsers: { $sum: { $sum: "$osType.uniqueUsers" } },
             },
           },
           {
@@ -242,9 +245,9 @@ const getOverallUrlAnalytics = tryCatch(async (req, res, next) => {
           { $unwind: "$deviceType" },
           {
             $group: {
-              _id: "$deviceType.deviceName",
-              totalUniqueClicks: { $sum: "$deviceType.uniqueClicks" },
-              totalUniqueUsers: { $sum: "$deviceType.uniqueUsers" },
+              _id: "$deviceType.deviceType",
+              totalUniqueClicks: { $sum: { $sum: "$deviceType.uniqueClicks" } },
+              totalUniqueUsers: { $sum: { $sum: "$deviceType.uniqueUsers" } },
             },
           },
           {
@@ -273,7 +276,7 @@ const getOverallUrlAnalytics = tryCatch(async (req, res, next) => {
   });
 });
 
-export  {
+export {
   getOverallUrlAnalytics,
   getUrlAnalyticForAlias,
   getUrlAnalyticForTopic,

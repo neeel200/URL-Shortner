@@ -1,16 +1,21 @@
-import express from 'express';
-import dotenv from 'dotenv';
-import errorController from './controllers/errorController.js';
-import globalRouter from './globalRouter.js';
+import express from "express";
+import cookieParser from "cookie-parser";
+import customError from "./utils/customError.js";
+import errorController from "./controllers/errorController.js";
+import globalRouter from "./globalRouter.js";
+import connectDb from "./DB/config.js";
+import verifyToken from "./middleware/auth.js";
 
-const app = express();
 const PORT = process.env.PORT;
+const app = express();
 
+connectDb();
+app.use(cookieParser());
 app.use(express.urlencoded({ extended: false }));
-dotenv.config({ path: ".env" });
+app.use(express.json());
 
 // endpoints
-app.use("/api", globalRouter)
+app.use("/api",  globalRouter);
 
 // health route
 app.get("/", (req, res) => {
