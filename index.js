@@ -4,10 +4,25 @@ import customError from "./utils/customError.js";
 import errorController from "./controllers/errorController.js";
 import globalRouter from "./globalRouter.js";
 import connectDb from "./DB/config.js";
-import verifyToken from "./middleware/auth.js";
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import path from "path"
+import cors from "cors"
+
+// Get the directory name of the current file
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const PORT = process.env.PORT;
 const app = express();
+
+const corsOptions = {
+  origin: 'http://localhost:3000', // Allow your front-end domain
+  credentials: true,               // Allow credentials like cookies or session
+};
+
+app.use(cors(corsOptions));
 
 connectDb();
 app.use(cookieParser());

@@ -6,6 +6,7 @@ import tryCatch from "../utils/tryCatch.js";
 import { nanoid } from "nanoid";
 import User from "../models/user.js";
 
+
 const getShortenUrl = tryCatch(async (req, res, next) => {
   const { topic, customAlias, longUrl } = req.body;
 
@@ -140,7 +141,9 @@ const redirectToTheOriginalUrl = tryCatch(async (req, res, next) => {
     (entry) => entry.date.getTime() === formattedDate.getTime()
   );
   if (dateEntry) {
-    dateEntry.cliks++;
+    dateEntry.clicks++;
+
+    
   } else {
     clickDocument.clicksByDate.push({
       date: formattedDate,

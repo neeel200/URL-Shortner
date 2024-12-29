@@ -3,6 +3,9 @@ import User from "../models/user.js";
 import Url from "../models/url.js";
 import customError from "../utils/customError.js";
 import mongoose from "mongoose";
+import redis from "ioredis"
+
+const redisClient = new redis(process.env.REDIS_URI);
 
 const getUrlAnalyticForAlias = tryCatch(async (req, res, next) => {
   const { alias } = req.params;
@@ -160,6 +163,13 @@ const getUrlAnalyticForTopic = tryCatch(async (req, res, next) => {
 const getOverallUrlAnalytics = tryCatch(async (req, res, next) => {
   const userId = req.user.id;
 
+  const cachedData = await redisClient.hgetall(`user:${userId}:analytics`);
+
+  // If cache exists, return it
+  if (Object.keys(cachedData).length > 0) {
+    return res.status(200).json({ data: cachedData });
+  }
+
   const pipeline = [
     { $match: { _id: new mongoose.Types.ObjectId(userId) } },
     { $unwind: "$urls" },
@@ -266,14 +276,21 @@ const getOverallUrlAnalytics = tryCatch(async (req, res, next) => {
   const aggregatedData = await User.aggregate(pipeline);
   const { clickData, clicksByDateData, osData, deviceData } = aggregatedData[0];
 
-  return res.status(200).json({
+  const responseObject = {
     totalUrls: clickData[0]?.totalUrls || 0,
     totalClicks: clickData[0]?.totalClicks || 0,
     uniqueUsers: clickData[0]?.uniqueUsers || 0,
     clicksByDate: clicksByDateData || [],
     osType: osData || [],
     deviceType: deviceData || [],
-  });
+  };
+
+  // not exists
+  await redisClient.hset(`user:${userId}:analytics`, responseObject);
+  const expirationTimeInSeconds = 3600; 
+  await redisClient.expire(`user:${userId}:analytics`, expirationTimeInSeconds);
+
+  return res.status(200).json(responseObject);
 });
 
 export {
